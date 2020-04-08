@@ -1,24 +1,25 @@
 <template>
   <div>
     <canvas id="myChart"></canvas>
-    <button @click="renderChart()"></button>
+    <!-- <button @click="dataDeaths()"></button> -->
     <table>
+      <!-- <tr>
+        <td>страна:  </td>
+        <td>{{country}}</td>
+      </tr>
       <tr>
         <td>подтверженно:  </td>
         <td>{{ confirmed }}</td>
       </tr>
+      
       <tr>
         <td>смерти:  </td>
-        <td></td>
+        <td>{{deaths}}</td>
       </tr>
       <tr>
         <td>вылечено:  </td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>страна:  </td>
-        <td></td>
-      </tr>
+        <td>{{date}}</td>
+      </tr> -->
     </table>
   
     <section v-if="errored">
@@ -53,14 +54,17 @@
         return value.toFixed(2);
       }
     },
-
+  
     data: () => ({
-      response:'',
+      data:'',
+      
       curDate: '',
-      date: '',
-      curMonth: '',
+      date: [],
+      
       status: 'confirmed',
-      confirmed:'',
+      confirmed:[],
+      deaths:'',
+      recovered:'',
       country: 'russia',
       arrLength:'',
       info: null,
@@ -69,69 +73,68 @@
     }),
 
     mounted() {
-      this.date = moment().utc().format('YYYY-MM-DD') // 2020-04-01
-      //this.date = new Date()
-      this.curMonth = moment().format('MMMM')
-      this.getData(this.country, this.status)
-      //this.renderChart()
+      
+      
+      this.getData(this.country, 'confirmed')
+      //this.getData(this.country,'recovered')
+      //this.getData(this.country,'deaths')
+      //this.date = moment().push('DD-MM')//.subtract(7, 'days')//.format('DD-MM-YY')//
+      //this.date = moment([2010, 1, 14])//.subtract(7, 'days')//.format('DD-MM-YY')//
     },
 
     methods: {
       getData(country, status) {
         axios
-          .get(`https://api.covid19api.com/total/country/${country}/status/confirmed`) 
+          .get(`https://api.covid19api.com/country/${country}/status/${status}`) 
           .then(response => {
-            
-            this.response = response.data
-            this.arrLength = response.data.length-1
-            this.confirmed = response.data[this.arrLength].Cases
-            this.date = response.data[this.arrLength].Date
-            this.renderChart()
-            //this.confirmed = response.data.find(e => e.Date.search(this.moment().utc().format('YYYY-MM-DD')) != -1)
-            //console.log(this.response.data.find(e => e.Date.search(this.moment().utc().format('YYYY-MM-DD')) != -1))
-
-            console.log(this.date)
-            //console.log(response.data[])
-            //console.table(response.data)
+            this.data = response.data
+            this.arrLength = response.data.length-14
+            response.data.slice(this.arrLength).forEach(element => this.confirmed.push(element.Cases))
+            for (let i = 0; i < 14; i++ ) { 
+            this.date.push(moment().subtract(i, 'days').format('DD-MM-YY'))
+            }
+            this.date.reverse()
           })
-          .catch(error => {
+      
+        
+        .catch(error => {
             this.errored = true
           })
           .finally(() => {
             this.loading = false
-            //this.renderChart2()
+            
+            this.renderChart()
           })
       },
 
-      renderChart2() {
-        let element = document.getElementById('myChart').getContext('2d')
-
-        let chart = new Chart(element, {
-          type: 'line',
-          data: [
-            {x: 1, y: 1},
-            {x: 1, y: 1},
-            {x: 1, y: 1},
-            {x: 1, y: 1},
-            {x: 1, y: 1},
-            {x: 1, y: 1},
-          ],
-        })
-      },
+      
 
       renderChart() {
+        
         let element = document.getElementById('myChart').getContext('2d')
 
         let chart = new Chart(element, {
           type: 'line',
           data: {
-             labels: [this.response[this.arrLength-13].Date.slice(0, 10),this.response[this.arrLength-12].Date.slice(0, 10),this.response[this.arrLength-11].Date.slice(0, 10),this.response[this.arrLength-10].Date.slice(0, 10),this.response[this.arrLength-9].Date.slice(0, 10),this.response[this.arrLength-8].Date.slice(0, 10),this.response[this.arrLength-7].Date.slice(0, 10),this.response[this.arrLength-6].Date.slice(0, 10),this.response[this.arrLength-5].Date.slice(0, 10),this.response[this.arrLength-4].Date.slice(0, 10), this.response[this.arrLength-3].Date.slice(0, 10), this.response[this.arrLength-2].Date.slice(0, 10), this.response[this.arrLength-1].Date.slice(0, 10), this.response[this.arrLength].Date.slice(0, 10)],
+             labels: this.date,
             datasets: [{
               label: ['зараженные'],
               backgroundColor: '',
-              borderColor: 'rgb(0, 0, 0)',
-               data: [this.response[this.arrLength-13].Cases,this.response[this.arrLength-12].Cases,this.response[this.arrLength-11].Cases,this.response[this.arrLength-10].Cases,this.response[this.arrLength-9].Cases,this.response[this.arrLength-8].Cases,this.response[this.arrLength-7].Cases,this.response[this.arrLength-6].Cases,this.response[this.arrLength-5].Cases,this.response[this.arrLength-4].Cases,this.response[this.arrLength-3].Cases,this.response[this.arrLength-2].Cases,this.response[this.arrLength-1].Cases,this.response[this.arrLength].Cases],
-            }]
+              borderColor: 'rgb(0, 0, 230)',
+               data: this.confirmed,
+            },{
+              label: ['вылечено'],
+              backgroundColor: '',
+              borderColor: 'rgb(0, 230, 0)',
+               data: this.recovered,
+            },{
+              label: ['смерти'],
+              backgroundColor: '',
+              borderColor: 'rgb(230, 0, 0)',
+               data: this.recovered,
+            }
+            ]
+            
           }
         })
       }
