@@ -1,29 +1,20 @@
 <template>
   <div>
-    <canvas id="myChart"></canvas>
-    <!-- <button @click="dataDeaths()"></button> -->
+    <div style="width: 50%; height: 50%"><canvas id="myChart"></canvas></div>
+    <select v-model="country" @change = 'countrySelector()'>
+      <option value="russia">Рашка</option>
+      <option value="italy">Ухан</option>
+      <option value="uganda">Уганда</option>
+      <option value="ukraine">Европа</option>
+      <option value="india">Еще одна</option>
+      <option value="moldova">Третья молдова</option>
+    </select>
     <table>
-      <!-- <tr>
-        <td>страна:  </td>
-        <td>{{country}}</td>
-      </tr>
-      <tr>
-        <td>подтверженно:  </td>
-        <td>{{ confirmed }}</td>
-      </tr>
-      
-      <tr>
-        <td>смерти:  </td>
-        <td>{{deaths}}</td>
-      </tr>
-      <tr>
-        <td>вылечено:  </td>
-        <td>{{date}}</td>
-      </tr> -->
+
     </table>
   
     <section v-if="errored">
-      <p>We're sorry, we're not able to retrieve this information at the moment, please try back later</p>
+      <p>ты все сломал</p>
     </section>
     <section v-else>
       <div v-if="loading">Loading...</div>
@@ -63,8 +54,8 @@
       
       status: 'confirmed',
       confirmed:[],
-      deaths:'',
-      recovered:'',
+      deaths:[],
+      recovered:[],
       country: 'russia',
       arrLength:'',
       info: null,
@@ -74,26 +65,23 @@
 
     mounted() {
       
-      
-      this.getData(this.country, 'confirmed')
-      //this.getData(this.country,'recovered')
-      //this.getData(this.country,'deaths')
-      //this.date = moment().push('DD-MM')//.subtract(7, 'days')//.format('DD-MM-YY')//
-      //this.date = moment([2010, 1, 14])//.subtract(7, 'days')//.format('DD-MM-YY')//
+      this.getDate()
+      this.getData(this.country, 'confirmed', this.confirmed)
+      this.getData(this.country, 'recovered', this.recovered)
+      this.getData(this.country, 'deaths', this.deaths)
+     
+
     },
 
     methods: {
-      getData(country, status) {
+      getData(country, status, cases) {
         axios
           .get(`https://api.covid19api.com/country/${country}/status/${status}`) 
           .then(response => {
             this.data = response.data
             this.arrLength = response.data.length-14
-            response.data.slice(this.arrLength).forEach(element => this.confirmed.push(element.Cases))
-            for (let i = 0; i < 14; i++ ) { 
-            this.date.push(moment().subtract(i, 'days').format('DD-MM-YY'))
-            }
-            this.date.reverse()
+            response.data.slice(this.arrLength).forEach(e => cases.push(e.Cases))
+            console.table(response.data)
           })
       
         
@@ -102,16 +90,37 @@
           })
           .finally(() => {
             this.loading = false
-            
             this.renderChart()
+           
+            
+            //console.table(this.data)
           })
+      },
+      getDate(){
+        for (let i = 0; i < 14; i++ ) { 
+            this.date.push(moment().subtract(i, 'days').format('DD-MM-YY'))
+            }
+            this.date.reverse()
+            
+
+      },
+
+      countrySelector(){
+        this.confirmed = []
+        this.recovered = []
+        this.deaths = []
+        this.date = []
+        this.getDate()
+        this.getData(this.country, 'confirmed', this.confirmed)
+        this.getData(this.country, 'recovered', this.recovered)
+        this.getData(this.country, 'deaths', this.deaths)
       },
 
       
 
       renderChart() {
         
-        let element = document.getElementById('myChart').getContext('2d')
+        let element = document.getElementById('myChart')//.getContext('2d')
 
         let chart = new Chart(element, {
           type: 'line',
@@ -131,7 +140,7 @@
               label: ['смерти'],
               backgroundColor: '',
               borderColor: 'rgb(230, 0, 0)',
-               data: this.recovered,
+               data: this.deaths,
             }
             ]
             
