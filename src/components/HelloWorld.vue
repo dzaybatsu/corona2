@@ -1,13 +1,14 @@
 <template>
   <div>
-    <div style="width: 50%; height: 50%"><canvas id="myChart"></canvas></div>
+    <div id="highchart" ></div>
+    
     <select v-model="country" @change = 'countrySelector()'>
-      <option value="russia">Рашка</option>
-      <option value="italy">Ухан</option>
+      <option value="russia">россия</option>
+      <option value="italy">италия</option>
       <option value="uganda">Уганда</option>
-      <option value="ukraine">Европа</option>
-      <option value="india">Еще одна</option>
-      <option value="moldova">Третья молдова</option>
+      <option value="ukraine">украина</option>
+      <option value="india">индия</option>
+      <option value="moldova">молдова</option>
     </select>
     <table>
 
@@ -33,10 +34,12 @@
     </section>
   </div>
 </template>
+<script src="/js/themes/dark-blue.js"></script>
 <script>
   import axios from 'axios'
   import moment from 'moment'
-  import Chart from 'chart.js'
+  
+  import Highcharts from 'highcharts'
   moment.locale('ru')
 
   export default {
@@ -69,19 +72,23 @@
       this.getData(this.country, 'confirmed', this.confirmed)
       this.getData(this.country, 'recovered', this.recovered)
       this.getData(this.country, 'deaths', this.deaths)
+
+
      
 
     },
 
     methods: {
-      getData(country, status, cases) {
-        axios
+      async getData(country, status, cases) {
+       return await axios
           .get(`https://api.covid19api.com/country/${country}/status/${status}`) 
           .then(response => {
             this.data = response.data
             this.arrLength = response.data.length-14
             response.data.slice(this.arrLength).forEach(e => cases.push(e.Cases))
-            console.table(response.data)
+            //console.table(response.data)
+
+
           })
       
         
@@ -113,39 +120,78 @@
         this.getDate()
         this.getData(this.country, 'confirmed', this.confirmed)
         this.getData(this.country, 'recovered', this.recovered)
-        this.getData(this.country, 'deaths', this.deaths)
+        this.getData(this.country, 'deaths', this.deaths)        
       },
 
       
 
       renderChart() {
         
-        let element = document.getElementById('myChart')//.getContext('2d')
+              Highcharts.chart('highchart', {
+    chart: {
+        type: 'areaspline',
+        backgroundColor: {
+            linearGradient: [0, 0, 0, 500],
+            stops: [
+                [0, 'rgb(65, 66, 68)'],
+                [1, 'rgb(170, 170, 170)'],
 
-        let chart = new Chart(element, {
-          type: 'line',
-          data: {
-             labels: this.date,
-            datasets: [{
-              label: ['зараженные'],
-              backgroundColor: '',
-              borderColor: 'rgb(0, 0, 230)',
-               data: this.confirmed,
-            },{
-              label: ['вылечено'],
-              backgroundColor: '',
-              borderColor: 'rgb(0, 230, 0)',
-               data: this.recovered,
-            },{
-              label: ['смерти'],
-              backgroundColor: '',
-              borderColor: 'rgb(230, 0, 0)',
-               data: this.deaths,
-            }
             ]
-            
-          }
-        })
+        },
+    },
+    colors: ['#4f50fd', '#28cc2a', '#cc2a2a'],
+    title: {
+        text: ''
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'left',
+        verticalAlign: 'top',
+        x: 150,
+        y: 100,
+        floating: true,
+        borderWidth: 1,
+        backgroundColor:
+            Highcharts.defaultOptions.legend.backgroundColor || 'rgb(170, 170, 170)'
+    },
+    xAxis: {
+        
+        categories: this.date,
+        
+        
+ 
+        
+    },
+    yAxis: {
+        title: {
+            text: ''
+        }
+    },
+    tooltip: {
+        shared: true,
+        valueSuffix: ' человек'
+    },
+    credits: {
+        enabled: true
+    },
+    plotOptions: {
+        areaspline: {
+            fillOpacity: 0.5
+        }
+    },
+    series: [{
+        name: 'зараженные',
+        data: this.confirmed
+    }, {
+        name: 'вылечено',
+        data: this.recovered
+    },{
+        name: 'смерти',
+        data: this.deaths
+    }]
+});
+  
+
       }
     },
   }
